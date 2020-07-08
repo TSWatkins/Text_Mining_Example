@@ -3,9 +3,6 @@ Text\_Mining
 Tom Watkins
 2020-07-07
 
-Text mining and NLP
-===================
-
 ### The idea behind this piece of work was to explore the most widely used words within each chapter of my PhD thesis.
 
 ``` r
@@ -186,6 +183,64 @@ wordcloud(words = Results_Data_Frame3$Word, freq = Results_Data_Frame3$Frequency
 
 ![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
+### Network analysis of word associations.
+
+``` r
+dtm3_matrix=as.matrix(dtm3)
+
+# converting each word that is present multiple times within a docuemnt to 1  
+dtm3_matrix[dtm3_matrix>1] = 1
+# creating a term-term matrix to probe the pairing of words
+term_term_matrix=t(dtm3_matrix) %*% dtm3_matrix
+# converting into a graph
+Graph=graph.adjacency(term_term_matrix,weighted = T, mode ='undirected')
+# removing loops i.e. same word twice
+Graph = simplify(Graph)
+# setting labels and degrees of the verticies so that each word is a verticies and each pair an edge
+# degree is the number of connections between terms, so how many times it occurs in the data we have
+V(Graph)$label = V(Graph)$name
+V(Graph)$degree = degree(Graph)
+# creating a historgram of node degrees
+hist(V(Graph)$degree,
+     col='green',
+     main='Histogram of Node Degree',
+     ylab='Frequency',
+     xlab= ' Degree of Verticies')
+```
+
+![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+Each word tends to have a lot of degrees (connections). As such, a network graph is likely not the best choice for further visualisation. A potential option however is to trim dtm3 to look at only the rarest words.
+
+``` r
+dtm3_matrix=as.matrix(dtm3)
+dtm3_df=as.data.frame(dtm3_matrix)
+
+# removing all words that are present  >5 times collectively
+dtm3_trimmed=as.matrix(dtm3_df[,!colSums(dtm3_df) >5])
+
+# creating a term-term matrix to probe the pairing of words
+term_term_matrix_trimmed=t(dtm3_trimmed) %*% dtm3_trimmed
+# converting into a graph
+Graph_trimmed=graph.adjacency(term_term_matrix_trimmed,weighted = T, mode ='undirected')
+# removing loops i.e. same word twice
+Graph_trimmed = simplify(Graph_trimmed)
+# setting labels and degrees of the verticies so that each word is a verticies and each pair an edge
+# degree is the number of connections between terms, so how many times it occurs in the data we have
+V(Graph_trimmed)$label = V(Graph_trimmed)$name
+V(Graph_trimmed)$degree = degree(Graph_trimmed)
+# creating a historgram of node degrees
+hist(V(Graph_trimmed)$degree,
+     col='green',
+     main='Histogram of Node Degree',
+     ylab='Frequency',
+     xlab= ' Degree of Verticies')
+```
+
+![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-9-1.png)
+
+There are still a huge number of verticies for each word, which reflects the repetitive nature of a thesis in some respects. Network analysis is therefore likely not possible.
+
 ### Chapter specific analysis:
 
 ``` r
@@ -225,7 +280,7 @@ ggplot(Melted,aes(x=Word,y=value)) +geom_bar(stat='identity',position='dodge',
   scale_fill_brewer(palette = 'Dark2')
 ```
 
-![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### Plotting the most frequent words of each chapter individually
 
@@ -248,4 +303,4 @@ ggplot(Chapter_Interest,aes(y=reorder(Word,Frequency),x=Frequency)) +
   theme(axis.text.x = element_text(angle=45,hjust=1))
 ```
 
-![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](NLP-Text-Analysis-GitHub_files/figure-markdown_github/unnamed-chunk-11-1.png)
